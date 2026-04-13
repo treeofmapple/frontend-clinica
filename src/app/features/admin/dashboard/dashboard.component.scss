@@ -1,0 +1,111 @@
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  transition: all var(--transition-base);
+  animation: fadeIn 0.4s both;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+  }
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+    border-color: transparent;
+    &::before { opacity: 1; }
+    .stat-arrow { opacity: 1; transform: translateX(0); }
+  }
+
+  &.card-blue   { &:hover { background: linear-gradient(135deg,#1d4ed8,#2563eb); color: white; } &::before { background: linear-gradient(135deg,#1d4ed8,#2563eb); } }
+  &.card-purple { &:hover { background: linear-gradient(135deg,#6d28d9,#8b5cf6); color: white; } &::before { background: linear-gradient(135deg,#6d28d9,#8b5cf6); } }
+  &.card-teal   { &:hover { background: linear-gradient(135deg,#0f766e,#14b8a6); color: white; } &::before { background: linear-gradient(135deg,#0f766e,#14b8a6); } }
+  &.card-rose   { &:hover { background: linear-gradient(135deg,#be123c,#f43f5e); color: white; } &::before { background: linear-gradient(135deg,#be123c,#f43f5e); } }
+  &.card-amber  { &:hover { background: linear-gradient(135deg,#b45309,#f59e0b); color: white; } &::before { background: linear-gradient(135deg,#b45309,#f59e0b); } }
+  &.card-green  { &:hover { background: linear-gradient(135deg,#065f46,#059669); color: white; } &::before { background: linear-gradient(135deg,#065f46,#059669); } }
+  &.card-orange { &:hover { background: linear-gradient(135deg,#c2410c,#ea580c); color: white; } &::before { background: linear-gradient(135deg,#c2410c,#ea580c); } }
+  &.card-red    { &:hover { background: linear-gradient(135deg,#991b1b,#dc2626); color: white; } &::before { background: linear-gradient(135deg,#991b1b,#dc2626); } }
+}
+
+.stat-icon {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  background: var(--color-bg);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: background var(--transition-fast);
+  ::ng-deep svg { width: 22px; height: 22px; color: var(--color-text-secondary); }
+  .stat-card:hover & { background: rgba(255,255,255,0.2); ::ng-deep svg { color: white; } }
+}
+
+.stat-body { flex: 1; min-width: 0; position: relative; z-index: 1; }
+.stat-value {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.875rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  line-height: 1;
+  margin-bottom: 3px;
+  letter-spacing: -0.04em;
+  .stat-card:hover & { color: white; }
+}
+.stat-label {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  .stat-card:hover & { color: rgba(255,255,255,0.8); }
+}
+
+.stat-arrow {
+  position: relative; z-index: 1;
+  opacity: 0; transform: translateX(-4px);
+  transition: all var(--transition-fast);
+  svg { width: 18px; height: 18px; color: rgba(255,255,255,0.7); }
+}
+
+.section-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 16px;
+  letter-spacing: -0.02em;
+}
+
+.links-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.quick-link {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 18px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+  &:hover { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-light); transform: translateY(-1px); }
+}
+.ql-icon { font-size: 1.75rem; flex-shrink: 0; }
+.ql-text { display: flex; flex-direction: column; gap: 2px; }
+.ql-title { font-weight: 600; font-size: 0.9375rem; color: var(--color-text-primary); }
+.ql-desc { font-size: 0.8125rem; color: var(--color-text-muted); }

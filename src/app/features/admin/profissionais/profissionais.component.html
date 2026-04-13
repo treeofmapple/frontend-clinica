@@ -1,0 +1,101 @@
+<div class="page-enter">
+  <app-page-header title="Profissionais de Saúde" subtitle="Gerencie os profissionais do sistema">
+    <app-btn variant="primary" (click)="openModal()">
+      <svg viewBox="0 0 20 20" fill="currentColor" style="width:16px;height:16px"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+      Novo Profissional
+    </app-btn>
+  </app-page-header>
+
+  <div class="toast success" *ngIf="successMsg"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>{{ successMsg }}</div>
+
+  <div class="filter-bar">
+    <div class="search-box">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+      <input type="text" placeholder="Buscar por nome ou especialidade..." [(ngModel)]="searchTerm" (ngModelChange)="applyFilter()"/>
+    </div>
+    <div class="filter-tabs">
+      <button [class.active]="filterStatus==='TODOS'" (click)="filterStatus='TODOS'; applyFilter()">Todos</button>
+      <button [class.active]="filterStatus==='ATIVO'" (click)="filterStatus='ATIVO'; applyFilter()">Ativos</button>
+      <button [class.active]="filterStatus==='INATIVO'" (click)="filterStatus='INATIVO'; applyFilter()">Inativos</button>
+    </div>
+  </div>
+
+  <div class="table-card" *ngIf="filtered.length > 0; else empty">
+    <table class="data-table">
+      <thead><tr><th>Profissional</th><th>Especialidade</th><th>Registro</th><th>Cadastro</th><th>Status</th><th>Ações</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let item of filtered" [class.inactive]="item.status==='INATIVO'">
+          <td>
+            <div class="prof-cell">
+              <div class="prof-avatar">{{ item.nome[0] }}</div>
+              <div>
+                <div class="item-name">{{ item.nome }}</div>
+                <div class="text-muted" style="font-size:0.8rem">{{ item.conselho }}</div>
+              </div>
+            </div>
+          </td>
+          <td>{{ item.especialidade }}</td>
+          <td><code class="reg-code">{{ item.numeroRegistro }}</code></td>
+          <td>
+            <span class="badge" [class.badge-ativo]="item.cadastroCompleto" [class.badge-warning]="!item.cadastroCompleto">
+              {{ item.cadastroCompleto ? 'Completo' : 'Pendente' }}
+            </span>
+          </td>
+          <td><span class="badge" [class.badge-ativo]="item.status==='ATIVO'" [class.badge-inativo]="item.status==='INATIVO'">{{ item.status }}</span></td>
+          <td>
+            <div class="action-btns">
+              <button class="action-btn edit" (click)="openModal(item)" title="Editar"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg></button>
+              <button class="action-btn" [class.deactivate]="item.status==='ATIVO'" [class.activate]="item.status==='INATIVO'" (click)="toggleStatus(item)">
+                <svg *ngIf="item.status==='ATIVO'" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd"/></svg>
+                <svg *ngIf="item.status==='INATIVO'" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="table-footer"><span>{{ filtered.length }} profissional(is)</span></div>
+  </div>
+
+  <ng-template #empty>
+    <app-empty-state title="Nenhum profissional encontrado" message="Cadastre um novo profissional de saúde.">
+      <app-btn variant="primary" (click)="openModal()">Novo Profissional</app-btn>
+    </app-empty-state>
+  </ng-template>
+</div>
+
+<app-modal [open]="modalOpen" [title]="editItem ? 'Editar Profissional' : 'Novo Profissional'" (close)="modalOpen=false" size="lg">
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <div class="form-grid cols-2">
+      <div class="form-group" [class.has-error]="f('nome')?.invalid && f('nome')?.touched">
+        <label>Nome Completo *</label>
+        <input type="text" formControlName="nome" placeholder="Nome do profissional"/>
+        <span class="field-error" *ngIf="f('nome')?.touched && f('nome')?.invalid">Mínimo 3 caracteres</span>
+      </div>
+      <div class="form-group" [class.has-error]="f('especialidade')?.invalid && f('especialidade')?.touched">
+        <label>Especialidade *</label>
+        <input type="text" formControlName="especialidade" placeholder="Ex: Clínica Geral"/>
+        <span class="field-error" *ngIf="f('especialidade')?.touched && f('especialidade')?.invalid">Campo obrigatório</span>
+      </div>
+      <div class="form-group" [class.has-error]="f('conselho')?.invalid && f('conselho')?.touched">
+        <label>Conselho *</label>
+        <select formControlName="conselho">
+          <option value="">Selecione...</option>
+          <option *ngFor="let c of conselhos" [value]="c">{{ c }}</option>
+        </select>
+        <span class="field-error" *ngIf="f('conselho')?.touched && f('conselho')?.invalid">Campo obrigatório</span>
+      </div>
+      <div class="form-group" [class.has-error]="f('numeroRegistro')?.invalid && f('numeroRegistro')?.touched">
+        <label>Número de Registro *</label>
+        <input type="text" formControlName="numeroRegistro" placeholder="Ex: CRM-12345"/>
+        <span class="field-error" *ngIf="f('numeroRegistro')?.touched && f('numeroRegistro')?.invalid">Campo obrigatório</span>
+      </div>
+    </div>
+    <div class="form-rule-info"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>Profissionais não podem ser excluídos, apenas inativados (RN005). O complemento de cadastro é feito pelo próprio profissional (RF008).</div>
+    <div class="error-banner" *ngIf="errorMsg">{{ errorMsg }}</div>
+    <div class="modal-actions">
+      <app-btn variant="secondary" type="button" (click)="modalOpen=false">Cancelar</app-btn>
+      <app-btn variant="primary" type="submit" [loading]="saving">{{ editItem ? 'Salvar' : 'Cadastrar' }}</app-btn>
+    </div>
+  </form>
+</app-modal>

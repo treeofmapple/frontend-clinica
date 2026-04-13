@@ -1,0 +1,61 @@
+<div class="page-enter">
+  <app-page-header title="Dashboard" [subtitle]="today"></app-page-header>
+
+  <div class="stats-grid">
+    <a *ngFor="let card of cards; let i = index"
+       [routerLink]="card.route"
+       class="stat-card"
+       [class]="'card-' + card.color"
+       [style.animation-delay]="i * 60 + 'ms'">
+      <div class="stat-icon" [innerHTML]="getIcon(card.icon)"></div>
+      <div class="stat-body">
+        <div class="stat-value">{{ stats[card.key] ?? 0 }}</div>
+        <div class="stat-label">{{ card.label }}</div>
+      </div>
+      <div class="stat-arrow">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+      </div>
+    </a>
+  </div>
+
+  <div class="quick-links">
+    <h2 class="section-title">Ações Rápidas</h2>
+    <div class="links-grid">
+      <a routerLink="/admin/escolas" class="quick-link">
+        <div class="ql-icon">🏫</div>
+        <div class="ql-text">
+          <span class="ql-title">Gerenciar Escolas</span>
+          <span class="ql-desc">Cadastrar e inativar escolas</span>
+        </div>
+      </a>
+      <a routerLink="/admin/unidades" class="quick-link">
+        <div class="ql-icon">🏢</div>
+        <div class="ql-text">
+          <span class="ql-title">Gerenciar Unidades</span>
+          <span class="ql-desc">Cadastrar e inativar unidades</span>
+        </div>
+      </a>
+      <a routerLink="/admin/profissionais" class="quick-link">
+        <div class="ql-icon">👨‍⚕️</div>
+        <div class="ql-text">
+          <span class="ql-title">Profissionais de Saúde</span>
+          <span class="ql-desc">Cadastrar e gerenciar profissionais</span>
+        </div>
+      </a>
+      <a routerLink="/admin/medicacoes" class="quick-link">
+        <div class="ql-icon">💊</div>
+        <div class="ql-text">
+          <span class="ql-title">Medicações</span>
+          <span class="ql-desc">Controle de estoque e validade</span>
+        </div>
+      </a>
+      <a routerLink="/admin/relatorios" class="quick-link">
+        <div class="ql-icon">📊</div>
+        <div class="ql-text">
+          <span class="ql-title">Relatórios</span>
+          <span class="ql-desc">Análises e dados do sistema</span>
+        </div>
+      </a>
+    </div>
+  </div>
+</div>

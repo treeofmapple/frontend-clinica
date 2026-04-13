@@ -1,0 +1,8 @@
+[tools]
+node = "22"
+
+[tasks.run]
+run = "bun run start"
+
+[tasks.install]
+run = "bun install"
