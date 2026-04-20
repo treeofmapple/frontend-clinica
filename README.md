@@ -4,6 +4,21 @@
 
 ---
 
+## 🆕 Atualização recente
+
+O projeto continuou funcional e agora também inclui:
+
+- Tema claro e escuro com persistência local
+- Sidebar com ícones ao lado dos itens
+- Layout mais bonito e consistente nas telas
+- Estados vazios mais compactos e menos "vazios"
+- Tela "Meu Cadastro" com fallback local para não ficar em branco
+- Campos ampliados para pacientes, profissionais e medicações
+
+Os endpoints documentados mais abaixo foram mantidos para a integração futura com o backend.
+
+---
+
 ## 🎯 O que o projeto faz?
 
 Um sistema web para **administradores** e **profissionais de saúde** gerenciarem:
@@ -247,8 +262,8 @@ Escola / Unidade
 ### ⚠️ Escopo do Projeto
 
 - **Esta é uma SIMULAÇÃO Frontend**: Todos os dados estão em memória (BehaviorSubject)
-- **Sem conexão com Backend**: Use este projeto como prototipo
-- **Guards locais apenas**: A segurança real deve ser implementada no Backend
+- **Sem conexão com Backend agora**: o app continua funcionando sozinho, mas os endpoints abaixo seguem documentados para integração futura
+- **Guards locais apenas**: a segurança real deve ser implementada no Backend
 
 ### 🔧 Para Desenvolvimento
 

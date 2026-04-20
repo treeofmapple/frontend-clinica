@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DataService } from '../../../core/services/data.service';
+import { ApiService } from '../../../core/services/api.service';
 import { Prontuario, Paciente, Atendimento } from '../../../core/models/models';
 import { PageHeaderComponent, BtnComponent, EmptyStateComponent } from '../../../shared/components/ui.components';
 import { ModalComponent } from '../../../shared/components/modal.component';
@@ -23,32 +23,25 @@ export class ProntuariosComponent implements OnInit {
   get filtered() {
     if (!this.searchTerm) return this.prontuarios;
     const t = this.searchTerm.toLowerCase();
-    return this.prontuarios.filter(p =>
-      (p.pacienteNome || '').toLowerCase().includes(t)
-    );
+    return this.prontuarios.filter(p => (p.pacienteNome || '').toLowerCase().includes(t));
   }
 
-  constructor(private data: DataService) {}
+  constructor(private api: ApiService) {}
 
   ngOnInit() {
-    this.data.getProntuarios().subscribe(list => this.prontuarios = list);
-    this.data.getPacientes().subscribe(list => this.pacientes = list);
+    this.api.getProntuarios().subscribe(list => this.prontuarios = list);
+    this.api.getPacientes().subscribe(list => this.pacientes = list);
   }
 
   getPacienteCategoria(pacienteId: number): string {
-    const p = this.pacientes.find(p => p.id === pacienteId);
-    return p?.categoria || '';
+    return this.pacientes.find(p => p.id === pacienteId)?.categoria || '';
   }
 
   getPacienteStatus(pacienteId: number): string {
-    const p = this.pacientes.find(p => p.id === pacienteId);
-    return p?.status || '';
+    return this.pacientes.find(p => p.id === pacienteId)?.status || '';
   }
 
-  verProntuario(p: Prontuario) {
-    this.selectedProntuario = p;
-    this.detalheOpen = true;
-  }
+  verProntuario(p: Prontuario) { this.selectedProntuario = p; this.detalheOpen = true; }
 
   getUltimoAtendimento(prontuario: Prontuario): Atendimento | null {
     if (!prontuario.atendimentos.length) return null;
@@ -58,9 +51,7 @@ export class ProntuariosComponent implements OnInit {
   }
 
   tipoColor(tipo: string): string {
-    const map: Record<string, string> = {
-      URGENCIA: 'danger', EMERGENCIA: 'warning', CONSULTA: 'primary', REVISAO: 'info'
-    };
+    const map: Record<string, string> = { URGENCIA: 'danger', EMERGENCIA: 'warning', CONSULTA: 'primary', REVISAO: 'info' };
     return map[tipo] || 'primary';
   }
 }

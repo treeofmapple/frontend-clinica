@@ -2,7 +2,6 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { forkJoin } from 'rxjs';
 import { ApiService } from '../../../core/services/api.service';
-import { DataService } from '../../../core/services/data.service';
 import { PageHeaderComponent } from '../../../shared/components/ui.components';
 
 @Component({
@@ -24,30 +23,30 @@ export class RelatoriosComponent implements OnInit {
   today = new Date().toISOString().split('T')[0];
   loading = true;
 
-  constructor(private api: ApiService, private data: DataService) {}
+  constructor(private api: ApiService) {}
 
   ngOnInit() {
-    // Dados com API real
     forkJoin({
       profissionais: this.api.getProfissionais(),
       escolas:       this.api.getEscolas(),
       unidades:      this.api.getUnidades(),
+      pacientes:     this.api.getPacientes(),
+      atendimentos:  this.api.getAtendimentos(),
+      medicacoes:    this.api.getMedicamentos(),
+      requisicoes:   this.api.getRequisicoes(),
     }).subscribe({
       next: (res) => {
         this.profissionais = res.profissionais;
         this.escolas       = res.escolas;
         this.unidades      = res.unidades;
+        this.pacientes     = res.pacientes;
+        this.atendimentos  = res.atendimentos;
+        this.medicacoes    = res.medicacoes;
+        this.requisicoes   = res.requisicoes;
         this.loading = false;
       },
       error: () => { this.loading = false; }
     });
-
-    // Dados ainda via mock (sem API no back)
-    this.data.getPacientes().subscribe(list => this.pacientes = list);
-    this.data.getAtendimentos().subscribe(list => this.atendimentos = list);
-    this.data.getMedicacoes().subscribe(list => this.medicacoes = list);
-    this.data.getRequisicoes().subscribe(list => this.requisicoes = list);
-    this.stats = this.data.getStats();
   }
 
   get ativosCount()        { return this.pacientes.filter(p => p.status === 'ATIVO').length; }
@@ -59,6 +58,7 @@ export class RelatoriosComponent implements OnInit {
     this.atendimentos.forEach(a => { tipos[a.tipo] = (tipos[a.tipo] || 0) + 1; });
     return Object.entries(tipos).map(([tipo, count]) => ({ tipo, count }));
   }
+
   get categoriaPacientes() {
     const cats: Record<string, number> = {};
     this.pacientes.forEach(p => { cats[p.categoria] = (cats[p.categoria] || 0) + 1; });

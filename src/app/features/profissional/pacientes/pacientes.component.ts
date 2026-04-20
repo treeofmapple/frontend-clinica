@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { DataService } from '../../../core/services/data.service';
+import { ApiService } from '../../../core/services/api.service';
 import { Escola, Unidade, Paciente, CategoriasPaciente, VinculoPaciente } from '../../../core/models/models';
 import { PageHeaderComponent, BtnComponent, EmptyStateComponent } from '../../../shared/components/ui.components';
 import { ModalComponent } from '../../../shared/components/modal.component';
@@ -30,28 +30,25 @@ export class PacientesComponent implements OnInit {
   categorias: CategoriasPaciente[] = ['ALUNO', 'COLABORADOR_UNIDADE', 'COLABORADOR_ESCOLA', 'EXTERNO'];
   vinculos: VinculoPaciente[] = ['ESCOLA', 'UNIDADE', 'REITORIA'];
 
-  constructor(private data: DataService, private fb: FormBuilder) {}
+  constructor(private api: ApiService, private fb: FormBuilder) {}
 
   ngOnInit() {
-    this.data.getPacientes().subscribe(list => {
-      this.pacientes = list;
-      this.applyFilter();
-    });
-    this.data.getEscolas().subscribe(list => this.escolas = list);
-    this.data.getUnidades().subscribe(list => this.unidades = list);
+    this.api.getPacientes().subscribe(list => { this.pacientes = list; this.applyFilter(); });
+    this.api.getEscolas().subscribe(list => this.escolas = list);
+    this.api.getUnidades().subscribe(list => this.unidades = list);
     this.buildForm();
   }
 
   buildForm(item?: Paciente) {
     const vinculoTipo = item?.vinculoTipo || this.defaultVinculoByCategoria(item?.categoria || 'ALUNO');
     this.form = this.fb.group({
-      nome:      [item?.nome || '', [Validators.required, Validators.minLength(3)]],
-      categoria: [item?.categoria || '', Validators.required],
+      nome:        [item?.nome || '', [Validators.required, Validators.minLength(3)]],
+      categoria:   [item?.categoria || '', Validators.required],
       vinculoTipo: [vinculoTipo, Validators.required],
-      escolaId:  [item?.escolaId ?? ''],
-      unidadeId: [item?.unidadeId ?? ''],
-      email:     [item?.email || '', [Validators.required, Validators.email]],
-      telefone:  [item?.telefone || '', Validators.required],
+      escolaId:    [item?.escolaId ?? ''],
+      unidadeId:   [item?.unidadeId ?? ''],
+      email:       [item?.email || '', [Validators.required, Validators.email]],
+      telefone:    [item?.telefone || '', Validators.required],
     });
     this.applyVinculoRules();
     this.form.get('categoria')?.valueChanges.subscribe((categoria) => {
@@ -72,12 +69,7 @@ export class PacientesComponent implements OnInit {
     });
   }
 
-  openModal(item?: Paciente) {
-    this.editItem = item || null;
-    this.buildForm(item);
-    this.errorMsg = '';
-    this.modalOpen = true;
-  }
+  openModal(item?: Paciente) { this.editItem = item || null; this.buildForm(item); this.errorMsg = ''; this.modalOpen = true; }
 
   save() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
@@ -85,45 +77,38 @@ export class PacientesComponent implements OnInit {
     const raw = this.form.value;
     const payload = {
       ...raw,
-      id: this.editItem?.id,
-      escolaId: raw.vinculoTipo === 'ESCOLA' ? Number(raw.escolaId) || undefined : undefined,
-      unidadeId: raw.vinculoTipo === 'UNIDADE' ? Number(raw.unidadeId) || undefined : undefined,
-      vinculoNome: this.getVinculoNome(raw.vinculoTipo, Number(raw.escolaId), Number(raw.unidadeId)),
+      escolaId:  raw.vinculoTipo === 'ESCOLA'   ? Number(raw.escolaId)   || undefined : undefined,
+      unidadeId: raw.vinculoTipo === 'UNIDADE'  ? Number(raw.unidadeId)  || undefined : undefined,
     };
-    this.data.savePaciente(payload).subscribe({
+    const obs = this.editItem
+      ? this.api.criarPaciente({ ...payload, id: this.editItem.id })
+      : this.api.criarPaciente(payload);
+    obs.subscribe({
       next: () => {
-        this.modalOpen = false;
-        this.saving = false;
+        this.api.getPacientes().subscribe(list => { this.pacientes = list; this.applyFilter(); });
+        this.modalOpen = false; this.saving = false;
         this.showSuccess(this.editItem ? 'Paciente atualizado!' : 'Paciente cadastrado! Prontuário criado automaticamente.');
       },
-      error: (e) => { this.errorMsg = e.message; this.saving = false; }
+      error: (e) => { this.errorMsg = e.error?.message ?? 'Erro ao salvar.'; this.saving = false; }
     });
   }
 
   toggleStatus(item: Paciente) {
-    const obs = item.status === 'ATIVO'
-      ? this.data.inativarPaciente(item.id)
-      : this.data.ativarPaciente(item.id);
-    obs.subscribe(() => this.showSuccess(`Paciente ${item.status === 'ATIVO' ? 'inativado' : 'ativado'}.`));
+    this.api.inativarPaciente(item.id).subscribe({
+      next: () => {
+        this.api.getPacientes().subscribe(list => { this.pacientes = list; this.applyFilter(); });
+        this.showSuccess(`Paciente ${item.status === 'ATIVO' ? 'inativado' : 'ativado'}.`);
+      }
+    });
   }
 
   labelCategoria(cat: string): string {
-    const map: Record<string, string> = {
-      ALUNO: 'Aluno',
-      COLABORADOR_UNIDADE: 'Colab. Unidade',
-      COLABORADOR_ESCOLA: 'Colab. Escola',
-      EXTERNO: 'Externo',
-    };
+    const map: Record<string, string> = { ALUNO: 'Aluno', COLABORADOR_UNIDADE: 'Colab. Unidade', COLABORADOR_ESCOLA: 'Colab. Escola', EXTERNO: 'Externo' };
     return map[cat] || cat;
   }
 
   labelVinculo(tipo: VinculoPaciente): string {
-    const map: Record<VinculoPaciente, string> = {
-      ESCOLA: 'Escola',
-      UNIDADE: 'Unidade',
-      REITORIA: 'Reitoria',
-    };
-    return map[tipo];
+    return ({ ESCOLA: 'Escola', UNIDADE: 'Unidade', REITORIA: 'Reitoria' })[tipo];
   }
 
   private defaultVinculoByCategoria(categoria: CategoriasPaciente): VinculoPaciente {
@@ -136,32 +121,12 @@ export class PacientesComponent implements OnInit {
     const tipo = this.form.get('vinculoTipo')?.value as VinculoPaciente;
     const escolaIdCtrl = this.form.get('escolaId');
     const unidadeIdCtrl = this.form.get('unidadeId');
-    escolaIdCtrl?.clearValidators();
-    unidadeIdCtrl?.clearValidators();
-
-    if (tipo === 'ESCOLA') {
-      escolaIdCtrl?.setValidators([Validators.required]);
-      unidadeIdCtrl?.setValue('');
-    } else if (tipo === 'UNIDADE') {
-      unidadeIdCtrl?.setValidators([Validators.required]);
-      escolaIdCtrl?.setValue('');
-    } else {
-      escolaIdCtrl?.setValue('');
-      unidadeIdCtrl?.setValue('');
-    }
-
+    escolaIdCtrl?.clearValidators(); unidadeIdCtrl?.clearValidators();
+    if (tipo === 'ESCOLA') { escolaIdCtrl?.setValidators([Validators.required]); unidadeIdCtrl?.setValue(''); }
+    else if (tipo === 'UNIDADE') { unidadeIdCtrl?.setValidators([Validators.required]); escolaIdCtrl?.setValue(''); }
+    else { escolaIdCtrl?.setValue(''); unidadeIdCtrl?.setValue(''); }
     escolaIdCtrl?.updateValueAndValidity({ emitEvent: false });
     unidadeIdCtrl?.updateValueAndValidity({ emitEvent: false });
-  }
-
-  private getVinculoNome(tipo: VinculoPaciente, escolaId: number, unidadeId: number): string {
-    if (tipo === 'ESCOLA') {
-      return this.escolas.find(e => e.id === escolaId)?.nome || 'Escola vinculada';
-    }
-    if (tipo === 'UNIDADE') {
-      return this.unidades.find(u => u.id === unidadeId)?.nome || 'Unidade vinculada';
-    }
-    return 'Reitoria';
   }
 
   showSuccess(msg: string) { this.successMsg = msg; setTimeout(() => this.successMsg = '', 4000); }

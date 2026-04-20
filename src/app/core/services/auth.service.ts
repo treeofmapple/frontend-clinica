@@ -10,7 +10,6 @@ import {
 } from "rxjs";
 import { Role, Usuario } from "../models/models";
 import { environment } from "../../../environments/environment";
-import { DataService } from "./data.service";
 import { LoginResponse } from "../models/models.requests";
 
 export interface AuthState {
@@ -41,7 +40,7 @@ function decodeJwt(token: string): Record<string, any> | null {
  */
 @Injectable({ providedIn: "root" })
 export class AuthService {
-  private readonly loginUrl = `${environment.apiUrl}/auth/login`;
+  private readonly loginUrl = `${environment.apiUrl}/auth/sign-in`;
 
   private state = new BehaviorSubject<AuthState>({
     user: null,
@@ -51,10 +50,7 @@ export class AuthService {
 
   state$ = this.state.asObservable();
 
-  constructor(
-    private http: HttpClient,
-    private data: DataService,
-  ) {}
+  constructor(private http: HttpClient) {}
 
   get currentUser(): Usuario | null {
     return this.state.value.user;
@@ -78,15 +74,7 @@ export class AuthService {
         username,
         password,
       } as LoginRequest)
-      .pipe(
-        tap((res) => this.handleLoginSuccess(res, username)),
-        catchError(() => {
-          return this.data.loginMock(username, password).pipe(
-            tap((res) => this.handleLoginSuccess(res, username)),
-            catchError((err) => throwError(() => err)),
-          );
-        }),
-      );
+      .pipe(tap((res) => this.handleLoginSuccess(res, username)));
   }
 
   private handleLoginSuccess(res: LoginResponse, username: string): void {
@@ -106,7 +94,6 @@ export class AuthService {
 
   logout(): void {
     this.state.next({ user: null, token: null, isAuthenticated: false });
-    this.data.logout();
     localStorage.removeItem("clinica_token");
     localStorage.removeItem("clinica_user");
   }

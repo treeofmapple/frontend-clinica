@@ -4,7 +4,6 @@ import { RouterModule } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { forkJoin } from 'rxjs';
 import { ApiService } from '../../../core/services/api.service';
-import { DataService } from '../../../core/services/data.service';
 import { PageHeaderComponent } from '../../../shared/components/ui.components';
 
 @Component({
@@ -17,7 +16,6 @@ import { PageHeaderComponent } from '../../../shared/components/ui.components';
 export class DashboardComponent implements OnInit {
   stats: any = {
     escolas: 0, unidades: 0, profissionais: 0,
-    // Abaixo ainda vêm do mock (sem API)
     pacientes: 0, atendimentos: 0, medicacoesAtivas: 0,
     medicacoesEstoqueBaixo: 0, requisicoesPendentes: 0,
   };
@@ -35,39 +33,33 @@ export class DashboardComponent implements OnInit {
     { label: 'Requisições',         key: 'requisicoesPendentes',   icon: 'bell',      color: 'red',    route: '/admin/medicacoes' },
   ];
 
-  constructor(
-    private api: ApiService,
-    private data: DataService,
-    private sanitizer: DomSanitizer,
-  ) {}
+  constructor(private api: ApiService, private sanitizer: DomSanitizer) {}
 
   ngOnInit() {
-    // Dados com API real
     forkJoin({
       escolas:       this.api.getEscolas(),
       unidades:      this.api.getUnidades(),
       profissionais: this.api.getProfissionais(),
+      pacientes:     this.api.getPacientes(),
+      atendimentos:  this.api.getAtendimentos(),
+      medicamentos:  this.api.getMedicamentos(),
+      requisicoes:   this.api.getRequisicoes(),
     }).subscribe({
       next: (res) => {
-        const mockStats = this.data.getStats();
+        const today = new Date().toISOString().split('T')[0];
         this.stats = {
           escolas:                res.escolas.length,
           unidades:               res.unidades.length,
-          profissionais:          res.profissionais.length,
-          // Abaixo ainda vêm do mock enquanto o back não tem esses endpoints
-          pacientes:              mockStats.pacientes,
-          atendimentos:           mockStats.atendimentos,
-          medicacoesAtivas:       mockStats.medicacoesAtivas,
-          medicacoesEstoqueBaixo: mockStats.medicacoesEstoqueBaixo,
-          requisicoesPendentes:   mockStats.requisicoesPendentes,
+          profissionais:          res.profissionais.filter((p: any) => p.status === 'ATIVO').length,
+          pacientes:              res.pacientes.filter((p: any) => p.status === 'ATIVO').length,
+          atendimentos:           res.atendimentos.length,
+          medicacoesAtivas:       res.medicamentos.filter((m: any) => m.status === 'ATIVO').length,
+          medicacoesEstoqueBaixo: res.medicamentos.filter((m: any) => m.status === 'ATIVO' && m.estoque < 20).length,
+          requisicoesPendentes:   res.requisicoes.length,
         };
         this.loading = false;
       },
-      error: () => {
-        // Fallback para mock em caso de erro de conexão
-        this.stats = this.data.getStats();
-        this.loading = false;
-      }
+      error: () => { this.loading = false; }
     });
   }
 
@@ -85,7 +77,5 @@ export class DashboardComponent implements OnInit {
     return icons[name] || '';
   }
 
-  safeIcon(name: string): SafeHtml {
-    return this.sanitizer.bypassSecurityTrustHtml(this.getIcon(name));
-  }
+  safeIcon(name: string): SafeHtml { return this.sanitizer.bypassSecurityTrustHtml(this.getIcon(name)); }
 }
