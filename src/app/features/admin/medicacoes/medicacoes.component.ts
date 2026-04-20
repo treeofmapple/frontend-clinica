@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { DataService } from '../../../core/services/data.service';
-import { Medicacao } from '../../../core/models/models';
+import { Medicamento } from '../../../core/models/models';
 import { PageHeaderComponent, BtnComponent, EmptyStateComponent } from '../../../shared/components/ui.components';
 import { ModalComponent } from '../../../shared/components/modal.component';
 
@@ -14,12 +14,12 @@ import { ModalComponent } from '../../../shared/components/modal.component';
   styleUrls: ['./medicacoes.component.scss']
 })
 export class MedicacoesComponent implements OnInit {
-  medicacoes: Medicacao[] = [];
-  filtered: Medicacao[] = [];
+  medicacoes: Medicamento[] = [];
+  filtered: Medicamento[] = [];
   searchTerm = '';
   filterStatus: 'TODOS'|'ATIVO'|'INATIVO' = 'TODOS';
   modalOpen = false;
-  editItem: Medicacao | null = null;
+  editItem: Medicamento | null = null;
   form!: FormGroup;
   saving = false;
   errorMsg = '';
@@ -33,11 +33,14 @@ export class MedicacoesComponent implements OnInit {
     this.buildForm();
   }
 
-  buildForm(item?: Medicacao) {
+  buildForm(item?: Medicamento) {
     this.form = this.fb.group({
       nome:      [item?.nome || '', Validators.required],
       descricao: [item?.descricao || '', Validators.required],
+      fornecedor:[item?.fornecedor || '', Validators.required],
+      armazenamento: [item?.armazenamento || 'TEMPERATURA_AMBIENTE', Validators.required],
       estoque:   [item?.estoque ?? 0, [Validators.required, Validators.min(0)]],
+      dataAquisicao: [item?.dataAquisicao || '', Validators.required],
       validade:  [item?.validade || '', Validators.required],
     });
   }
@@ -50,7 +53,7 @@ export class MedicacoesComponent implements OnInit {
     });
   }
 
-  openModal(item?: Medicacao) { this.editItem=item||null; this.buildForm(item); this.errorMsg=''; this.modalOpen=true; }
+  openModal(item?: Medicamento) { this.editItem=item||null; this.buildForm(item); this.errorMsg=''; this.modalOpen=true; }
 
   save() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
@@ -62,7 +65,7 @@ export class MedicacoesComponent implements OnInit {
     });
   }
 
-  toggleStatus(item: Medicacao) {
+  toggleStatus(item: Medicamento) {
     const obs = item.status==='ATIVO' ? this.data.inativarMedicacao(item.id) : this.data.ativarMedicacao(item.id);
     obs.subscribe(() => this.showSuccess(`Medicação ${item.status==='ATIVO'?'inativada':'ativada'}.`));
   }

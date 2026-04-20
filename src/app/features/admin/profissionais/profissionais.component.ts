@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { DataService } from '../../../core/services/data.service';
+import { ApiService } from '../../../core/services/api.service';
 import { ProfissionalSaude } from '../../../core/models/models';
 import { PageHeaderComponent, BtnComponent, EmptyStateComponent } from '../../../shared/components/ui.components';
 import { ModalComponent } from '../../../shared/components/modal.component';
@@ -17,57 +17,80 @@ export class ProfissionaisComponent implements OnInit {
   profissionais: ProfissionalSaude[] = [];
   filtered: ProfissionalSaude[] = [];
   searchTerm = '';
-  filterStatus: 'TODOS'|'ATIVO'|'INATIVO' = 'TODOS';
+  loading = false;
+
   modalOpen = false;
-  editItem: ProfissionalSaude | null = null;
   form!: FormGroup;
   saving = false;
   errorMsg = '';
   successMsg = '';
+  // Exibe senha em texto (toggle)
+  showPassword = false;
 
-  conselhos = ['CRM','CRO','COREN','CREFITO','CRP','CFM','CRN'];
-
-  constructor(private data: DataService, private fb: FormBuilder) {}
+  constructor(private api: ApiService, private fb: FormBuilder) {}
 
   ngOnInit() {
-    this.data.getProfissionais().subscribe(list => { this.profissionais = list; this.applyFilter(); });
     this.buildForm();
+    this.loadProfissionais();
   }
 
-  buildForm(item?: ProfissionalSaude) {
+  loadProfissionais() {
+    this.loading = true;
+    this.api.getProfissionais().subscribe({
+      next: list => { this.profissionais = list; this.applyFilter(); this.loading = false; },
+      error: () => { this.loading = false; }
+    });
+  }
+
+  buildForm() {
     this.form = this.fb.group({
-      nome:           [item?.nome || '', [Validators.required, Validators.minLength(3)]],
-      conselho:       [item?.conselho || '', Validators.required],
-      especialidade:  [item?.especialidade || '', Validators.required],
-      numeroRegistro: [item?.numeroRegistro || '', Validators.required],
+      nome:     ['', [Validators.required, Validators.minLength(3)]],
+      username: ['', [Validators.required, Validators.minLength(3)]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
     });
   }
 
   applyFilter() {
     this.filtered = this.profissionais.filter(p => {
-      const ms = this.filterStatus === 'TODOS' || p.status === this.filterStatus;
-      const mq = !this.searchTerm || p.nome.toLowerCase().includes(this.searchTerm.toLowerCase()) || p.especialidade.toLowerCase().includes(this.searchTerm.toLowerCase());
-      return ms && mq;
+      return !this.searchTerm ||
+        p.nome.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        (p.especialidade ?? '').toLowerCase().includes(this.searchTerm.toLowerCase());
     });
   }
 
-  openModal(item?: ProfissionalSaude) { this.editItem=item||null; this.buildForm(item); this.errorMsg=''; this.modalOpen=true; }
+  openModal() {
+    this.buildForm();
+    this.errorMsg = '';
+    this.showPassword = false;
+    this.modalOpen = true;
+  }
 
   save() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.saving = true;
-    const payload = { ...this.form.value, id: this.editItem?.id };
-    this.data.saveProfissional(payload).subscribe({
-      next: () => { this.modalOpen=false; this.saving=false; this.showSuccess('Profissional salvo com sucesso!'); },
-      error: (e) => { this.errorMsg=e.message; this.saving=false; }
+    this.errorMsg = '';
+
+    this.api.criarProfissional(this.form.value).subscribe({
+      next: () => {
+        this.modalOpen = false;
+        this.saving = false;
+        this.showSuccess('Profissional cadastrado com sucesso!');
+        this.loadProfissionais();
+      },
+      error: (e) => {
+        this.errorMsg = e.error?.message ?? 'Erro ao cadastrar profissional.';
+        this.saving = false;
+      }
     });
   }
 
-  toggleStatus(item: ProfissionalSaude) {
-    const obs = item.status==='ATIVO' ? this.data.inativarProfissional(item.id) : this.data.ativarProfissional(item.id);
-    obs.subscribe(() => this.showSuccess(`Profissional ${item.status==='ATIVO'?'inativado':'ativado'}.`));
+  inativar(item: ProfissionalSaude) {
+    this.api.inativarProfissional(item.id).subscribe({
+      next: () => { this.showSuccess('Profissional inativado.'); this.loadProfissionais(); },
+      error: (e) => { this.errorMsg = e.error?.message ?? 'Erro ao inativar.'; }
+    });
   }
 
-  showSuccess(msg: string) { this.successMsg=msg; setTimeout(()=>this.successMsg='',3000); }
+  showSuccess(msg: string) { this.successMsg = msg; setTimeout(() => this.successMsg = '', 3000); }
   f(field: string) { return this.form.get(field); }
 }

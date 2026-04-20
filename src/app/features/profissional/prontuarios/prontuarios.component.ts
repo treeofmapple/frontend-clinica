@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataService } from '../../../core/services/data.service';
-import { Prontuario, Paciente } from '../../../core/models/models';
+import { Prontuario, Paciente, Atendimento } from '../../../core/models/models';
 import { PageHeaderComponent, BtnComponent, EmptyStateComponent } from '../../../shared/components/ui.components';
 import { ModalComponent } from '../../../shared/components/modal.component';
 
@@ -48,6 +48,13 @@ export class ProntuariosComponent implements OnInit {
   verProntuario(p: Prontuario) {
     this.selectedProntuario = p;
     this.detalheOpen = true;
+  }
+
+  getUltimoAtendimento(prontuario: Prontuario): Atendimento | null {
+    if (!prontuario.atendimentos.length) return null;
+    return [...prontuario.atendimentos].sort(
+      (a, b) => new Date(b.dataInicio).getTime() - new Date(a.dataInicio).getTime()
+    )[0];
   }
 
   tipoColor(tipo: string): string {

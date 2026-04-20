@@ -7,7 +7,7 @@
        class="stat-card"
        [class]="'card-' + card.color"
        [style.animation-delay]="i * 60 + 'ms'">
-      <div class="stat-icon" [innerHTML]="getIcon(card.icon)"></div>
+      <div class="stat-icon" [innerHTML]="safeIcon(card.icon)"></div>
       <div class="stat-body">
         <div class="stat-value">{{ stats[card.key] ?? 0 }}</div>
         <div class="stat-label">{{ card.label }}</div>

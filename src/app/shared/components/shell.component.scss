@@ -94,7 +94,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 9px 10px;
+  padding: 11px 12px;
   border-radius: var(--radius-md);
   color: var(--color-sidebar-text);
   transition: all var(--transition-fast);
@@ -133,13 +133,17 @@
 
 .nav-icon {
   flex-shrink: 0;
-  width: 20px;
-  height: 20px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 10px;
+  background: rgba(59, 130, 246, 0.1);
+  color: #8bb6ff;
+  border: 1px solid rgba(59, 130, 246, 0.15);
 
-  ::ng-deep svg { width: 18px; height: 18px; display: block; }
+  ::ng-deep svg { width: 16px; height: 16px; display: block; }
 }
 
 .nav-label {
@@ -252,6 +256,28 @@
 }
 
 .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(99,102,241,0.12));
+  border: 1px solid rgba(59,130,246,0.18);
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all var(--transition-fast);
+
+  svg { width: 16px; height: 16px; color: var(--color-primary); }
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: rgba(59,130,246,0.28);
+    box-shadow: 0 8px 24px rgba(59,130,246,0.12);
+  }
+}
 
 .user-chip {
   display: flex;

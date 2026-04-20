@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { AuthService } from '../../core/services/auth.service';
@@ -22,6 +23,7 @@ export class ShellComponent implements OnInit {
   sidebarCollapsed = false;
   mobileOpen = false;
   currentRoute = '';
+  theme: 'dark' | 'light' = 'dark';
 
   adminNav: NavItem[] = [
     { label: 'Dashboard',     icon: 'grid',      route: '/admin/dashboard' },
@@ -40,9 +42,15 @@ export class ShellComponent implements OnInit {
     { label: 'Requisicoes',   icon: 'bell',      route: '/profissional/requisicoes' },
   ];
 
-  constructor(public auth: AuthService, private router: Router) {}
+  constructor(
+    public auth: AuthService,
+    private router: Router,
+    private sanitizer: DomSanitizer,
+  ) {}
 
   ngOnInit() {
+    this.theme = (localStorage.getItem('clinica_theme') as 'dark' | 'light') || 'dark';
+    this.applyTheme();
     this.router.events
       .pipe(filter(e => e instanceof NavigationEnd))
       .subscribe((e: any) => { this.currentRoute = e.url; this.mobileOpen = false; });
@@ -52,9 +60,20 @@ export class ShellComponent implements OnInit {
   get navItems(): NavItem[] { return this.auth.isAdmin ? this.adminNav : this.profissionalNav; }
   get userName(): string { return this.auth.currentUser?.username || ''; }
   get userRole(): string { return this.auth.isAdmin ? 'Administrador' : 'Profissional de Saude'; }
+  get themeLabel(): string { return this.theme === 'dark' ? 'Modo claro' : 'Modo escuro'; }
 
   logout() { this.auth.logout(); this.router.navigate(['/login']); }
   isActive(route: string): boolean { return this.currentRoute.startsWith(route); }
+
+  toggleTheme() {
+    this.theme = this.theme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('clinica_theme', this.theme);
+    this.applyTheme();
+  }
+
+  private applyTheme() {
+    document.body.setAttribute('data-theme', this.theme);
+  }
 
   getIcon(name: string): string {
     const icons: Record<string, string> = {
@@ -71,5 +90,9 @@ export class ShellComponent implements OnInit {
       bell: `<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/></svg>`,
     };
     return icons[name] || '';
+  }
+
+  safeIcon(name: string): SafeHtml {
+    return this.sanitizer.bypassSecurityTrustHtml(this.getIcon(name));
   }
 }

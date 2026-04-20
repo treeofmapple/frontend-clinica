@@ -20,6 +20,12 @@
           <span class="cat-chip-sm">{{ getPacienteCategoria(p.pacienteId) }}</span>
           <span class="badge" [class.badge-ativo]="getPacienteStatus(p.pacienteId)==='ATIVO'" [class.badge-inativo]="getPacienteStatus(p.pacienteId)==='INATIVO'">{{ getPacienteStatus(p.pacienteId) }}</span>
         </div>
+        <div class="pc-summary" *ngIf="getUltimoAtendimento(p) as ultimo">
+          <div><strong>Último atendimento:</strong> {{ ultimo.dataInicio | date:'dd/MM/yyyy HH:mm' }}</div>
+          <div><strong>Tipo:</strong> {{ ultimo.tipo }}</div>
+          <div><strong>Sintomas:</strong> {{ ultimo.sintomas }}</div>
+          <div><strong>Tratamento:</strong> {{ ultimo.tratamento }}</div>
+        </div>
         <div class="pc-atend">
           <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/></svg>
           {{ p.atendimentos.length }} atendimento(s) registrado(s)
@@ -97,7 +103,7 @@
               <span class="tl-label">Medicações:</span>
               <div class="tl-med-tags">
                 <span *ngFor="let m of a.medicacoesUsadas" class="tl-med-tag">
-                  💊 {{ m.medicacaoNome }} ({{ m.quantidade }}x — {{ m.dosagem }})
+                  {{ m.medicacaoNome }} ({{ m.quantidade }}x - {{ m.dosagem }})
                 </span>
               </div>
             </div>

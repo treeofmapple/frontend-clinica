@@ -55,7 +55,7 @@
         [class.active]="isActive(item.route)"
         [title]="sidebarCollapsed ? item.label : ''"
       >
-        <span class="nav-icon" [innerHTML]="getIcon(item.icon)"></span>
+        <span class="nav-icon" [innerHTML]="safeIcon(item.icon)"></span>
         <span class="nav-label" *ngIf="!sidebarCollapsed">{{
           item.label
         }}</span>
@@ -106,6 +106,15 @@
         </svg>
       </button>
       <div class="topbar-right">
+        <button class="theme-toggle" (click)="toggleTheme()" [attr.aria-label]="themeLabel">
+          <svg *ngIf="theme === 'dark'" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M10 2a1 1 0 01.995.883L11 3v1a1 1 0 01-1.993.117L9 4V3a1 1 0 011-1zm5.657 1.343a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.32.083l-.094-.083a1 1 0 010-1.414l.707-.707zM18 9a1 1 0 01.117 1.993L18 11h-1a1 1 0 01-.117-1.993L17 9h1zM4 9a1 1 0 01.117 1.993L4 11H3a1 1 0 01-.117-1.993L3 9h1zm1.636-4.657a1 1 0 01.083 1.32l-.083.094-.707.707A1 1 0 013.5 5.05l.094-.083.707-.707a1 1 0 011.335.083zM10 6a4 4 0 100 8 4 4 0 000-8zm5.364 1.636a1 1 0 011.32.083l.094.083.707.707a1 1 0 01-1.32 1.497l-.094-.083-.707-.707a1 1 0 01.083-1.32zM11 16a1 1 0 011 1v1a1 1 0 01-1.993.117L10 18v-1a1 1 0 011-1zm-6.657-.657a1 1 0 011.414 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707z"/>
+          </svg>
+          <svg *ngIf="theme === 'light'" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M17.293 13.95A8 8 0 018.05 4.707a1 1 0 00-1.262-1.262 10 10 0 1011.767 11.767 1 1 0 00-1.262-1.262z" clip-rule="evenodd"/>
+          </svg>
+          <span>{{ themeLabel }}</span>
+        </button>
         <div class="user-chip">
           <div class="chip-avatar">{{ userName[0].toUpperCase() }}</div>
           <span>{{ userName }}</span>

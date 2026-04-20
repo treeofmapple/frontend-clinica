@@ -8,11 +8,13 @@ import {
   Atendimento,
   Prontuario,
   ProfissionalSaude,
-  Medicacao,
-  RequisicaoMedicacao,
-  Status,
+  Medicamento,
   UsoMedicacao,
+  Usuario,
+  VinculoPaciente,
+  RequisicaoMedicacao,
 } from "../models/models";
+import { LoginResponse } from "../models/models.requests";
 
 /**
  * Serviço central de dados
@@ -73,33 +75,71 @@ const PROFISSIONAIS_MOCK: ProfissionalSaude[] = [
   {
     id: 1,
     nome: "Dr. Ricardo Alves",
+    username: "ricardo",
+    formacao: "Medicina",
     conselho: "CRM",
     especialidade: "Clínica Geral",
     numeroRegistro: "CRM-12345",
+    diasAtendimento: "SEG, QUA, SEX",
+    turnosAtendimento: "MANHA",
+    dataCadastro: "2025-01-10",
     status: "ATIVO",
-    formacao: "Medicina - UFBA",
-    disponibilidade: "Seg-Sex 08h-17h",
     cadastroCompleto: true,
   },
   {
     id: 2,
     nome: "Dra. Patrícia Nunes",
+    username: "patricia",
+    formacao: "Odontologia",
     conselho: "CRO",
     especialidade: "Odontologia",
     numeroRegistro: "CRO-98765",
+    diasAtendimento: "TER, QUI",
+    turnosAtendimento: "TARDE",
+    dataCadastro: "2025-01-15",
     status: "ATIVO",
-    formacao: "Odontologia - UNIFACS",
-    disponibilidade: "Ter-Qui 09h-18h",
     cadastroCompleto: true,
   },
   {
     id: 3,
     nome: "Enf. Bruno Rocha",
+    username: "bruno",
+    formacao: "",
     conselho: "COREN",
     especialidade: "Enfermagem",
     numeroRegistro: "COREN-55432",
+    diasAtendimento: "",
+    turnosAtendimento: "",
+    dataCadastro: "2025-03-01",
     status: "ATIVO",
     cadastroCompleto: false,
+  },
+];
+const USUARIOS_MOCK: Usuario[] = [
+  { id: 1, username: "admin", password: "admin123", role: "ADMINISTRADOR" },
+  {
+    id: 2,
+    username: "profissional",
+    password: "prof123",
+    role: "PROFISSIONAL_SAUDE",
+  },
+  {
+    id: 3,
+    username: "ricardo",
+    password: "ricardo123",
+    role: "PROFISSIONAL_SAUDE",
+  },
+  {
+    id: 4,
+    username: "patricia",
+    password: "patricia123",
+    role: "PROFISSIONAL_SAUDE",
+  },
+  {
+    id: 5,
+    username: "bruno",
+    password: "bruno123",
+    role: "PROFISSIONAL_SAUDE",
   },
 ];
 const PACIENTES_MOCK: Paciente[] = [
@@ -107,6 +147,9 @@ const PACIENTES_MOCK: Paciente[] = [
     id: 1,
     nome: "Mariana Torres",
     categoria: "ALUNO",
+    vinculoTipo: "ESCOLA",
+    vinculoNome: "Escola de Medicina",
+    escolaId: 1,
     email: "mariana@ies.edu.br",
     telefone: "71 99999-1111",
     status: "ATIVO",
@@ -116,6 +159,9 @@ const PACIENTES_MOCK: Paciente[] = [
     id: 2,
     nome: "Felipe Andrade",
     categoria: "COLABORADOR_UNIDADE",
+    vinculoTipo: "UNIDADE",
+    vinculoNome: "Unidade Central",
+    unidadeId: 1,
     email: "felipe@ies.edu.br",
     telefone: "71 99999-2222",
     status: "ATIVO",
@@ -125,18 +171,23 @@ const PACIENTES_MOCK: Paciente[] = [
     id: 3,
     nome: "Carla Moreira",
     categoria: "EXTERNO",
+    vinculoTipo: "REITORIA",
+    vinculoNome: "Reitoria",
     email: "carla@gmail.com",
     telefone: "71 99999-3333",
     status: "INATIVO",
     prontuarioId: 3,
   },
 ];
-const MEDICACOES_MOCK: Medicacao[] = [
+const MEDICACOES_MOCK: Medicamento[] = [
   {
     id: 1,
     nome: "Dipirona 500mg",
     descricao: "Analgésico e antipirético",
+    fornecedor: "Laboratorio Alpha",
+    armazenamento: "TEMPERATURA_AMBIENTE",
     estoque: 150,
+    dataAquisicao: "2025-02-10",
     validade: "2026-06-30",
     status: "ATIVO",
   },
@@ -144,7 +195,10 @@ const MEDICACOES_MOCK: Medicacao[] = [
     id: 2,
     nome: "Ibuprofeno 400mg",
     descricao: "Anti-inflamatório",
+    fornecedor: "Farmaceutica Beta",
+    armazenamento: "TEMPERATURA_AMBIENTE",
     estoque: 80,
+    dataAquisicao: "2025-02-18",
     validade: "2025-12-31",
     status: "ATIVO",
   },
@@ -152,7 +206,10 @@ const MEDICACOES_MOCK: Medicacao[] = [
     id: 3,
     nome: "Paracetamol 750mg",
     descricao: "Analgésico",
+    fornecedor: "Laboratorio Gama",
+    armazenamento: "TEMPERATURA_AMBIENTE",
     estoque: 0,
+    dataAquisicao: "2025-01-20",
     validade: "2026-03-15",
     status: "ATIVO",
   },
@@ -160,7 +217,10 @@ const MEDICACOES_MOCK: Medicacao[] = [
     id: 4,
     nome: "Amoxicilina 500mg",
     descricao: "Antibiótico",
+    fornecedor: "Laboratorio Delta",
+    armazenamento: "REFRIGERACAO",
     estoque: 45,
+    dataAquisicao: "2024-12-05",
     validade: "2024-01-01",
     status: "INATIVO",
   },
@@ -240,7 +300,7 @@ const REQUISICOES_MOCK: RequisicaoMedicacao[] = [
 ];
 
 @Injectable({ providedIn: "root" })
-export class DataMock {
+export class DataService {
   // BehaviorSubjects para cada entidade - permite reatividade em tempo real
   private escolas$ = new BehaviorSubject<Escola[]>([...ESCOLAS_MOCK]);
   private unidades$ = new BehaviorSubject<Unidade[]>([...UNIDADES_MOCK]);
@@ -248,7 +308,9 @@ export class DataMock {
     ...PROFISSIONAIS_MOCK,
   ]);
   private pacientes$ = new BehaviorSubject<Paciente[]>([...PACIENTES_MOCK]);
-  private medicacoes$ = new BehaviorSubject<Medicacao[]>([...MEDICACOES_MOCK]);
+  private medicacoes$ = new BehaviorSubject<Medicamento[]>([
+    ...MEDICACOES_MOCK,
+  ]);
   private atendimentos$ = new BehaviorSubject<Atendimento[]>([
     ...ATENDIMENTOS_MOCK,
   ]);
@@ -258,6 +320,7 @@ export class DataMock {
   private requisicoes$ = new BehaviorSubject<RequisicaoMedicacao[]>([
     ...REQUISICOES_MOCK,
   ]);
+  private currentUser$ = new BehaviorSubject<Usuario | null>(null);
 
   // Rastreador de IDs para cada entidade (para novas criações)
   private nextIds: Record<string, number> = {
@@ -270,6 +333,38 @@ export class DataMock {
     prontuario: 4,
     requisicao: 3,
   };
+
+  private resolveVinculoPaciente(data: Partial<Paciente>): {
+    vinculoTipo: VinculoPaciente;
+    vinculoNome: string;
+    escolaId?: number;
+    unidadeId?: number;
+  } {
+    if (data.vinculoTipo === "ESCOLA") {
+      const escolaId = data.escolaId ?? this.escolas$.value[0]?.id;
+      const escola = this.escolas$.value.find((e) => e.id === escolaId);
+      return {
+        vinculoTipo: "ESCOLA",
+        vinculoNome: escola?.nome ?? "Escola vinculada",
+        escolaId,
+      };
+    }
+
+    if (data.vinculoTipo === "UNIDADE") {
+      const unidadeId = data.unidadeId ?? this.unidades$.value[0]?.id;
+      const unidade = this.unidades$.value.find((u) => u.id === unidadeId);
+      return {
+        vinculoTipo: "UNIDADE",
+        vinculoNome: unidade?.nome ?? "Unidade vinculada",
+        unidadeId,
+      };
+    }
+
+    return {
+      vinculoTipo: "REITORIA",
+      vinculoNome: "Reitoria",
+    };
+  }
 
   // ── ESCOLAS ── (RN001, RN003)
   getEscolas(): Observable<Escola[]> {
@@ -389,10 +484,15 @@ export class DataMock {
       this.profissionais$.next(updated);
       return of(updated.find((p) => p.id === data.id)!).pipe(delay(300));
     }
+    const hoje = new Date().toISOString().split("T")[0];
     const novo: ProfissionalSaude = {
       id: this.nextIds["profissional"]++,
       status: "ATIVO",
       cadastroCompleto: false,
+      formacao: "",
+      diasAtendimento: "",
+      turnosAtendimento: "",
+      dataCadastro: hoje,
       ...data,
     } as ProfissionalSaude;
     this.profissionais$.next([...list, novo]);
@@ -441,18 +541,22 @@ export class DataMock {
   savePaciente(data: Partial<Paciente>): Observable<Paciente> {
     const list = this.pacientes$.value;
     if (data.id) {
+      const current = list.find((p) => p.id === data.id);
+      const vinculo = this.resolveVinculoPaciente({ ...current, ...data });
       const updated = list.map((p) =>
-        p.id === data.id ? ({ ...p, ...data } as Paciente) : p,
+        p.id === data.id ? ({ ...p, ...data, ...vinculo } as Paciente) : p,
       );
       this.pacientes$.next(updated);
       return of(updated.find((p) => p.id === data.id)!).pipe(delay(300));
     }
     // RN007: Criar prontuário automaticamente
     const prontuarioId = this.nextIds["prontuario"];
+    const vinculo = this.resolveVinculoPaciente(data);
     const novo: Paciente = {
       id: this.nextIds["paciente"]++,
       status: "ATIVO",
       prontuarioId,
+      ...vinculo,
       ...data,
     } as Paciente;
     // RN008: Prontuário vinculado ao paciente
@@ -487,24 +591,27 @@ export class DataMock {
   }
 
   // ── MEDICAÇÕES ── (RN009)
-  getMedicacoes(): Observable<Medicacao[]> {
+  getMedicacoes(): Observable<Medicamento[]> {
     return this.medicacoes$.asObservable();
   }
 
-  saveMedicacao(data: Partial<Medicacao>): Observable<Medicacao> {
+  saveMedicacao(data: Partial<Medicamento>): Observable<Medicamento> {
     const list = this.medicacoes$.value;
     if (data.id) {
       const updated = list.map((m) =>
-        m.id === data.id ? ({ ...m, ...data } as Medicacao) : m,
+        m.id === data.id ? ({ ...m, ...data } as Medicamento) : m,
       );
       this.medicacoes$.next(updated);
       return of(updated.find((m) => m.id === data.id)!).pipe(delay(300));
     }
-    const nova: Medicacao = {
+    const nova: Medicamento = {
       id: this.nextIds["medicacao"]++,
       status: "ATIVO",
+      fornecedor: "",
+      armazenamento: "TEMPERATURA_AMBIENTE",
+      dataAquisicao: new Date().toISOString().split("T")[0],
       ...data,
-    } as Medicacao;
+    } as Medicamento;
     this.medicacoes$.next([...list, nova]);
     return of(nova).pipe(delay(300));
   }
@@ -564,6 +671,21 @@ export class DataMock {
         return throwError(
           () => new Error(`Estoque insuficiente de ${med.nome}.`),
         );
+    }
+
+    // RN013: Validar que profissional tem cadastro completo
+    if (data.profissionalId) {
+      const prof = this.profissionais$.value.find(
+        (p) => p.id === data.profissionalId,
+      );
+      if (prof && !prof.cadastroCompleto) {
+        return throwError(
+          () =>
+            new Error(
+              "Profissional deve completar cadastro antes de registrar atendimentos.",
+            ),
+        );
+      }
     }
 
     const list = this.atendimentos$.value;
@@ -659,5 +781,50 @@ export class DataMock {
       ).length,
       requisicoesPendentes: this.requisicoes$.value.length,
     };
+  }
+
+  loginMock(username: string, password: string): Observable<LoginResponse> {
+    const usuario = USUARIOS_MOCK.find(
+      (u) => u.username === username && u.password === password,
+    );
+
+    if (!usuario) {
+      return throwError(() => new Error("Usuário ou senha inválidos."));
+    }
+
+    const token = this.createMockJwt(usuario);
+    this.currentUser$.next(usuario);
+    return of({ token, usuario }).pipe(delay(500));
+  }
+
+  private createMockJwt(usuario: Usuario): string {
+    const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
+    const now = Math.floor(Date.now() / 1000);
+    const payload = btoa(
+      JSON.stringify({
+        sub: usuario.id.toString(),
+        username: usuario.username,
+        role: usuario.role,
+        iat: now,
+        exp: now + 3600, // 1 hora
+      }),
+    );
+    return `${header}.${payload}.mock-signature`;
+  }
+
+  getCurrentUser(): Observable<Usuario | null> {
+    return this.currentUser$.asObservable();
+  }
+
+  getProfissionalLogado(): ProfissionalSaude | undefined {
+    const usuario = this.currentUser$.value;
+    if (!usuario || usuario.role !== "PROFISSIONAL_SAUDE") return undefined;
+    return this.profissionais$.value.find(
+      (p) => p.username === usuario.username,
+    );
+  }
+
+  logout(): void {
+    this.currentUser$.next(null);
   }
 }

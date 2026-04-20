@@ -1,50 +1,31 @@
-// src/app/core/interceptors/auth.interceptor.ts
-import {
-  HttpInterceptorFn,
-  HttpErrorResponse,
-  HttpInterceptor,
-  HttpEvent,
-  HttpHandler,
-  HttpRequest,
-} from "@angular/common/http";
-import { Injectable, inject } from "@angular/core";
-import { Observable, catchError, throwError } from "rxjs";
-import { AuthService } from "../services/auth.service";
-import { Router } from "@angular/router";
+import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
+import { inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { catchError, throwError } from 'rxjs';
+import { AuthService } from '../services/auth.service';
 
-@Injectable()
-export class AuthInterceptor implements HttpInterceptor {
-  private authService = inject(AuthService);
-  private router = inject(Router);
+/**
+ * Interceptor HTTP funcional (Angular 17+)
+ * - Injeta o header Authorization: Bearer <token> em todas as requisições autenticadas
+ * - Redireciona para /login automaticamente em caso de 401 (token expirado/inválido)
+ */
+export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  const auth   = inject(AuthService);
+  const router = inject(Router);
 
-  intercept(
-    request: HttpRequest<any>,
-    next: HttpHandler,
-  ): Observable<HttpEvent<any>> {
-    const token = this.authService.getAccessToken();
-    request = this.addTokenHeader(request, token);
+  const token = auth.token;
 
-    return next.handle(request).pipe(
-      catchError((error) => {
-        if (
-          error instanceof HttpErrorResponse &&
-          error.status === 401 &&
-          !request.url.includes("/auth/")
-        ) {
-          this.authService.logout();
-          this.router.navigate(["/home"]);
-        }
-        return throwError(() => error);
-      }),
-    );
-  }
-  private addTokenHeader(request: HttpRequest<any>, token: string | null) {
-    if (token) {
-      return request.clone({
-        withCredentials: true,
-        setHeaders: { Authorization: `Bearer ${token}` },
-      });
-    }
-    return request.clone({ withCredentials: true });
-  }
-}
+  const authReq = token
+    ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
+    : req;
+
+  return next(authReq).pipe(
+    catchError((error: HttpErrorResponse) => {
+      if (error.status === 401) {
+        auth.logout();
+        router.navigate(['/login']);
+      }
+      return throwError(() => error);
+    })
+  );
+};

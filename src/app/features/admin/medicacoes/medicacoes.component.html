@@ -22,12 +22,16 @@
 
   <div class="table-card" *ngIf="filtered.length > 0; else empty">
     <table class="data-table">
-      <thead><tr><th>Medicação</th><th>Estoque</th><th>Validade</th><th>Status</th><th>Ações</th></tr></thead>
+      <thead><tr><th>Medicação</th><th>Fornecedor</th><th>Estoque</th><th>Validade</th><th>Status</th><th>Ações</th></tr></thead>
       <tbody>
         <tr *ngFor="let item of filtered" [class.inactive]="item.status==='INATIVO'">
           <td>
             <div class="item-name">{{ item.nome }}</div>
             <div class="text-muted" style="font-size:0.8rem">{{ item.descricao }}</div>
+          </td>
+          <td>
+            <div>{{ item.fornecedor }}</div>
+            <div class="text-muted" style="font-size:0.8rem">{{ item.armazenamento === 'REFRIGERACAO' ? 'Refrigeração' : 'Temperatura ambiente' }}</div>
           </td>
           <td>
             <div class="stock-cell">
@@ -78,10 +82,28 @@
         <input type="text" formControlName="descricao" placeholder="Ex: Analgésico e antipirético"/>
         <span class="field-error" *ngIf="f('descricao')?.touched && f('descricao')?.invalid">Campo obrigatório</span>
       </div>
+      <div class="form-group" [class.has-error]="f('fornecedor')?.invalid && f('fornecedor')?.touched">
+        <label>Fornecedor *</label>
+        <input type="text" formControlName="fornecedor" placeholder="Laboratório ou fabricante"/>
+        <span class="field-error" *ngIf="f('fornecedor')?.touched && f('fornecedor')?.invalid">Campo obrigatório</span>
+      </div>
+      <div class="form-group" [class.has-error]="f('armazenamento')?.invalid && f('armazenamento')?.touched">
+        <label>Armazenamento *</label>
+        <select formControlName="armazenamento">
+          <option value="TEMPERATURA_AMBIENTE">Temperatura ambiente</option>
+          <option value="REFRIGERACAO">Refrigeração</option>
+        </select>
+        <span class="field-error" *ngIf="f('armazenamento')?.touched && f('armazenamento')?.invalid">Campo obrigatório</span>
+      </div>
       <div class="form-group" [class.has-error]="f('estoque')?.invalid && f('estoque')?.touched">
         <label>Qtd. em Estoque *</label>
         <input type="number" formControlName="estoque" min="0" placeholder="0"/>
         <span class="field-error" *ngIf="f('estoque')?.touched && f('estoque')?.invalid">Valor inválido</span>
+      </div>
+      <div class="form-group" [class.has-error]="f('dataAquisicao')?.invalid && f('dataAquisicao')?.touched">
+        <label>Data de Aquisição *</label>
+        <input type="date" formControlName="dataAquisicao"/>
+        <span class="field-error" *ngIf="f('dataAquisicao')?.touched && f('dataAquisicao')?.invalid">Campo obrigatório</span>
       </div>
       <div class="form-group" [class.has-error]="f('validade')?.invalid && f('validade')?.touched">
         <label>Data de Validade *</label>

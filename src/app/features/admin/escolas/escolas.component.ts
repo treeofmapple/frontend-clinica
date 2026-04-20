@@ -1,11 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { ApiService } from '../../../core/services/api.service';
 import { Escola } from '../../../core/models/models';
 import { PageHeaderComponent, BtnComponent, EmptyStateComponent } from '../../../shared/components/ui.components';
 import { ModalComponent } from '../../../shared/components/modal.component';
-import { EscolaService } from '../../../core/services/escola.service';
-import { EscolaResponse } from '../../../core/models/escola.models';
 
 @Component({
   selector: 'app-escolas',
@@ -15,64 +14,71 @@ import { EscolaResponse } from '../../../core/models/escola.models';
   styleUrls: ['./escolas.component.scss']
 })
 export class EscolasComponent implements OnInit {
-  escolas: EscolaResponse[] = [];
-  filtered: EscolaResponse[] = [];
+  escolas: Escola[] = [];
+  filtered: Escola[] = [];
   searchTerm = '';
-  filterStatus: 'TODOS'|'ATIVO'|'INATIVO' = 'TODOS';
+  loading = false;
 
   modalOpen = false;
-  editItem: EscolaResponse | null = null;
   form!: FormGroup;
   saving = false;
   errorMsg = '';
   successMsg = '';
 
-  constructor(private escolaService: EscolaService, private fb: FormBuilder) {}
+  constructor(private api: ApiService, private fb: FormBuilder) {}
 
   ngOnInit() {
-    this.escolaService.buscarTodasEscola().subscribe(list => {
-      this.escolas = list;
-      this.applyFilter();
-    });
     this.buildForm();
+    this.loadEscolas();
   }
 
-  buildForm(item?: Escola) {
+  loadEscolas() {
+    this.loading = true;
+    this.api.getEscolas().subscribe({
+      next: list => { this.escolas = list; this.applyFilter(); this.loading = false; },
+      error: () => { this.loading = false; }
+    });
+  }
+
+  buildForm() {
     this.form = this.fb.group({
-      nome:        [item?.nome || '', [Validators.required, Validators.minLength(3)]],
-      coordenador: [item?.coordenador || '', Validators.required],
-      ies:         [item?.ies || '', Validators.required],
+      nome:        ['', [Validators.required, Validators.minLength(3)]],
+      coordenador: ['', Validators.required],
+      ies:         ['', Validators.required],
     });
   }
 
   applyFilter() {
-    this.filtered = this.escolas.filter(e => {
-      const matchStatus = this.filterStatus === 'TODOS' || e.status === this.filterStatus;
-      const matchSearch = !this.searchTerm || e.nome.toLowerCase().includes(this.searchTerm.toLowerCase()) || e.coordenador.toLowerCase().includes(this.searchTerm.toLowerCase());
-      return matchStatus && matchSearch;
-    });
+    this.filtered = this.escolas.filter(e =>
+      !this.searchTerm ||
+      e.nome.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+      e.coordenador.toLowerCase().includes(this.searchTerm.toLowerCase())
+    );
   }
 
-  openModal(item?: EscolaResponse) {
-    this.editItem = item || null;
-    this.buildForm(item);
+  openModal() {
+    this.buildForm();
     this.errorMsg = '';
     this.modalOpen = true;
   }
 
   save() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
-    this.saving = true; this.errorMsg = '';
-    const payload = { ...this.form.value, id: this.editItem?.id, status: this.editItem?.status || 'ATIVO' };
-    this.escolaService.saveEscola(payload).subscribe({
-      next: () => { this.modalOpen = false; this.saving = false; this.showSuccess('Escola salva com sucesso!'); },
-      error: (e) => { this.errorMsg = e.message; this.saving = false; }
-    });
-  }
+    this.saving = true;
+    this.errorMsg = '';
 
-  toggleStatus(item: Escola) {
-    const obs = item.status === 'ATIVO' ? this.escolaService.inativarEscola(item.id) : this.data.ativarEscola(item.id);
-    obs.subscribe(() => this.showSuccess(`Escola ${item.status === 'ATIVO' ? 'inativada' : 'ativada'} com sucesso.`));
+    this.api.criarEscola(this.form.value).subscribe({
+      next: () => {
+        this.modalOpen = false;
+        this.saving = false;
+        this.showSuccess('Escola cadastrada com sucesso!');
+        this.loadEscolas();
+      },
+      error: (e) => {
+        this.errorMsg = e.error?.message ?? 'Erro ao salvar escola.';
+        this.saving = false;
+      }
+    });
   }
 
   showSuccess(msg: string) {
@@ -80,5 +86,5 @@ export class EscolasComponent implements OnInit {
     setTimeout(() => this.successMsg = '', 3000);
   }
 
-  getFormField(field: string) { return this.form.get(field); }
+  f(field: string) { return this.form.get(field); }
 }

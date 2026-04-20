@@ -12,4 +12,16 @@ import { AuthService } from "./core/services/auth.service";
   imports: [RouterOutlet],
   template: `<router-outlet></router-outlet>`,
 })
-export class AppComponent {}
+export class AppComponent implements OnInit {
+  constructor(private auth: AuthService) {}
+
+  ngOnInit() {
+    this.auth.restoreSession();
+    this.applyStoredTheme();
+  }
+
+  private applyStoredTheme() {
+    const theme = localStorage.getItem("clinica_theme") || "dark";
+    document.body.setAttribute("data-theme", theme);
+  }
+}

@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule, FormArray } from '@angular/forms';
+import { AuthService } from '../../../core/services/auth.service';
 import { DataService } from '../../../core/services/data.service';
-import { Atendimento, Paciente, Medicacao, TipoAtendimento } from '../../../core/models/models';
+import { Atendimento, Paciente, Medicamento, TipoAtendimento } from '../../../core/models/models';
 import { PageHeaderComponent, BtnComponent, EmptyStateComponent } from '../../../shared/components/ui.components';
 import { ModalComponent } from '../../../shared/components/modal.component';
 
@@ -16,7 +17,7 @@ import { ModalComponent } from '../../../shared/components/modal.component';
 export class AtendimentosComponent implements OnInit {
   atendimentos: Atendimento[] = [];
   pacientes: Paciente[] = [];
-  medicacoes: Medicacao[] = [];
+  medicacoes: Medicamento[] = [];
   searchTerm = '';
   modalOpen = false;
   detalheOpen = false;
@@ -25,7 +26,6 @@ export class AtendimentosComponent implements OnInit {
   saving = false;
   errorMsg = '';
   successMsg = '';
-  // RN013: bloquear se cadastro incompleto — aqui simulado via flag
   cadastroCompleto = true;
 
   tipos: TipoAtendimento[] = ['URGENCIA', 'EMERGENCIA', 'CONSULTA', 'REVISAO'];
@@ -45,21 +45,16 @@ export class AtendimentosComponent implements OnInit {
     return this.form.get('medicacoesUsadas') as FormArray;
   }
 
-  get medicacoesAtivas(): Medicacao[] {
+  get medicacoesAtivas(): Medicamento[] {
     return this.medicacoes.filter(m => m.status === 'ATIVO');
   }
 
-  constructor(private data: DataService, private fb: FormBuilder) {}
+  constructor(private data: DataService, private auth: AuthService, private fb: FormBuilder) {}
 
   ngOnInit() {
     this.data.getAtendimentos().subscribe(list => this.atendimentos = list);
     this.data.getPacientes().subscribe(list => this.pacientes = list.filter(p => p.status === 'ATIVO'));
     this.data.getMedicacoes().subscribe(list => this.medicacoes = list);
-    // RN013: checar se profissional logado tem cadastro completo
-    this.data.getProfissionais().subscribe(list => {
-      const prof = list.find(p => p.id === 2);
-      this.cadastroCompleto = prof?.cadastroCompleto || false;
-    });
     this.buildForm();
   }
 
@@ -120,8 +115,8 @@ export class AtendimentosComponent implements OnInit {
       ...raw,
       pacienteId: Number(raw.pacienteId),
       pacienteNome: this.pacientes.find(p => p.id === Number(raw.pacienteId))?.nome,
-      profissionalId: 2,
-      profissionalNome: 'Dr. Profissional',
+      profissionalId: this.auth.currentUser?.id ?? 0,
+      profissionalNome: this.auth.currentUser?.username ?? '',
       medicacoesUsadas: medUsadas,
     };
 

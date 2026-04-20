@@ -9,9 +9,7 @@ import { AuthService } from "../services/auth.service";
 export const authGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  if (auth.isAuthenticated()) {
-    return true;
-  }
+  if (auth.isAuthenticated) return true;
   router.navigate(["/login"]);
   return false;
 };
@@ -23,9 +21,7 @@ export const authGuard: CanActivateFn = () => {
 export const adminGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  if (auth.isAuthenticated() && auth.isAdmin) {
-    return true;
-  }
+  if (auth.isAdmin) return true;
   router.navigate(["/profissional/pacientes"]);
   return false;
 };

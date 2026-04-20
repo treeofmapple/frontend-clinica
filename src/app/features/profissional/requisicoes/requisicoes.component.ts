@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { AuthService } from '../../../core/services/auth.service';
 import { DataService } from '../../../core/services/data.service';
-import { RequisicaoMedicacao, Medicacao, TipoRequisicao } from '../../../core/models/models';
+import { RequisicaoMedicacao, Medicamento, TipoRequisicao } from '../../../core/models/models';
 import { PageHeaderComponent, BtnComponent, EmptyStateComponent } from '../../../shared/components/ui.components';
 import { ModalComponent } from '../../../shared/components/modal.component';
 
@@ -15,7 +16,7 @@ import { ModalComponent } from '../../../shared/components/modal.component';
 })
 export class RequisicoesComponent implements OnInit {
   requisicoes: RequisicaoMedicacao[] = [];
-  medicacoes: Medicacao[] = [];
+  medicacoes: Medicamento[] = [];
   searchTerm = '';
   filterTipo: string = 'TODOS';
   modalOpen = false;
@@ -36,7 +37,7 @@ export class RequisicoesComponent implements OnInit {
 
   get medicacoesAtivas() { return this.medicacoes.filter(m => m.status === 'ATIVO'); }
 
-  constructor(private data: DataService, private fb: FormBuilder) {}
+  constructor(private data: DataService, private auth: AuthService, private fb: FormBuilder) {}
 
   ngOnInit() {
     this.data.getRequisicoes().subscribe(list => this.requisicoes = list);
@@ -62,7 +63,7 @@ export class RequisicoesComponent implements OnInit {
       ...raw,
       medicacaoId: Number(raw.medicacaoId),
       medicacaoNome: med?.nome || '',
-      profissionalId: 2,
+      profissionalId: this.auth.currentUser?.id ?? 0,
       quantidade: Number(raw.quantidade),
     };
     this.data.saveRequisicao(payload).subscribe({

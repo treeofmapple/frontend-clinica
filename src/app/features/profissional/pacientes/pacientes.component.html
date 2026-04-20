@@ -31,6 +31,7 @@
         <tr>
           <th>Paciente</th>
           <th>Categoria</th>
+          <th>Vínculo</th>
           <th>Telefone</th>
           <th>Prontuário</th>
           <th>Status</th>
@@ -52,6 +53,10 @@
             <span class="cat-chip cat-{{ item.categoria.toLowerCase().replace('_','-') }}">
               {{ labelCategoria(item.categoria) }}
             </span>
+          </td>
+          <td>
+            <div class="text-muted">{{ labelVinculo(item.vinculoTipo) }}</div>
+            <div style="font-size:0.8rem">{{ item.vinculoNome }}</div>
           </td>
           <td>{{ item.telefone }}</td>
           <td>
@@ -114,6 +119,29 @@
           <option *ngFor="let c of categorias" [value]="c">{{ labelCategoria(c) }}</option>
         </select>
         <span class="field-error" *ngIf="f('categoria')?.touched && f('categoria')?.invalid">Campo obrigatório</span>
+      </div>
+      <div class="form-group" [class.has-error]="f('vinculoTipo')?.invalid && f('vinculoTipo')?.touched">
+        <label>Vínculo com a IES *</label>
+        <select formControlName="vinculoTipo">
+          <option *ngFor="let v of vinculos" [value]="v">{{ labelVinculo(v) }}</option>
+        </select>
+        <span class="field-error" *ngIf="f('vinculoTipo')?.touched && f('vinculoTipo')?.invalid">Campo obrigatório</span>
+      </div>
+      <div class="form-group" *ngIf="f('vinculoTipo')?.value === 'ESCOLA'" [class.has-error]="f('escolaId')?.invalid && f('escolaId')?.touched">
+        <label>Escola *</label>
+        <select formControlName="escolaId">
+          <option value="">Selecione a escola...</option>
+          <option *ngFor="let e of escolas" [value]="e.id">{{ e.nome }}</option>
+        </select>
+        <span class="field-error" *ngIf="f('escolaId')?.touched && f('escolaId')?.invalid">Campo obrigatório</span>
+      </div>
+      <div class="form-group" *ngIf="f('vinculoTipo')?.value === 'UNIDADE'" [class.has-error]="f('unidadeId')?.invalid && f('unidadeId')?.touched">
+        <label>Unidade *</label>
+        <select formControlName="unidadeId">
+          <option value="">Selecione a unidade...</option>
+          <option *ngFor="let u of unidades" [value]="u.id">{{ u.nome }}</option>
+        </select>
+        <span class="field-error" *ngIf="f('unidadeId')?.touched && f('unidadeId')?.invalid">Campo obrigatório</span>
       </div>
       <div class="form-group" [class.has-error]="f('telefone')?.invalid && f('telefone')?.touched">
         <label>Telefone *</label>

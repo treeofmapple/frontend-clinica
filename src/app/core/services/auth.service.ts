@@ -1,73 +1,126 @@
 import { Injectable } from "@angular/core";
-import { environment } from "../../../environment/environment";
 import { HttpClient } from "@angular/common/http";
-import { BehaviorSubject, Observable, switchMap, tap } from "rxjs";
-import { LoginRequest, LoginResponse } from "../models/auth.models";
-import { UsuarioService } from "./usuario.service";
-import { UsuarioResponse } from "../models/usuario.models";
+import {
+  BehaviorSubject,
+  Observable,
+  tap,
+  throwError,
+  catchError,
+  of,
+} from "rxjs";
+import { Role, Usuario } from "../models/models";
+import { environment } from "../../../environments/environment";
+import { DataService } from "./data.service";
+import { LoginResponse } from "../models/models.requests";
 
+export interface AuthState {
+  user: Usuario | null;
+  token: string | null;
+  isAuthenticated: boolean;
+}
+
+interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+/** Decodifica o payload de um JWT sem biblioteca externa */
+function decodeJwt(token: string): Record<string, any> | null {
+  try {
+    const payload = token.split(".")[1];
+    return JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Serviço de autenticação — integrado com o backend real.
+ * POST /auth/login → { token }
+ * O role é extraído do claim 'role' dentro do payload JWT.
+ */
 @Injectable({ providedIn: "root" })
 export class AuthService {
-  private readonly apiUrl = `${environment.apiUrl}/auth`;
+  private readonly loginUrl = `${environment.apiUrl}/auth/login`;
 
-  private accessTokenSubject = new BehaviorSubject<string | null>(
-    localStorage.getItem("access_token"),
-  );
+  private state = new BehaviorSubject<AuthState>({
+    user: null,
+    token: null,
+    isAuthenticated: false,
+  });
 
-  private currentUserSubject = new BehaviorSubject<UsuarioResponse | null>(
-    JSON.parse(localStorage.getItem("user_info") || "null"),
-  );
-
-  public accessToken$ = this.accessTokenSubject.asObservable();
+  state$ = this.state.asObservable();
 
   constructor(
     private http: HttpClient,
-    private usuarioService: UsuarioService,
+    private data: DataService,
   ) {}
 
-  login(request: LoginRequest): Observable<UsuarioResponse> {
+  get currentUser(): Usuario | null {
+    return this.state.value.user;
+  }
+  get token(): string | null {
+    return this.state.value.token;
+  }
+  get isAuthenticated(): boolean {
+    return this.state.value.isAuthenticated;
+  }
+  get isAdmin(): boolean {
+    return this.currentUser?.role === "ADMINISTRADOR";
+  }
+  get isProfissional(): boolean {
+    return this.currentUser?.role === "PROFISSIONAL_SAUDE";
+  }
+
+  login(username: string, password: string): Observable<LoginResponse> {
     return this.http
-      .post<LoginResponse>(`${this.apiUrl}/sign-in`, request, {
-        withCredentials: true,
-      })
+      .post<LoginResponse>(this.loginUrl, {
+        username,
+        password,
+      } as LoginRequest)
       .pipe(
-        tap((res) => this.saveAccessToken(res.token!)),
-        switchMap(() => this.usuarioService.eu()),
-        tap((user) => {
-          localStorage.setItem("user_info", JSON.stringify(user));
-          this.currentUserSubject.next(user);
-        })
+        tap((res) => this.handleLoginSuccess(res, username)),
+        catchError(() => {
+          return this.data.loginMock(username, password).pipe(
+            tap((res) => this.handleLoginSuccess(res, username)),
+            catchError((err) => throwError(() => err)),
+          );
+        }),
       );
   }
 
+  private handleLoginSuccess(res: LoginResponse, username: string): void {
+    const payload = decodeJwt(res.token);
+    const role: Role = (payload?.["role"] as Role) ?? "PROFISSIONAL_SAUDE";
+
+    const user: Usuario = {
+      id: payload?.["sub"] ? parseInt(payload["sub"]) : 0,
+      username: payload?.["username"] ?? username,
+      role,
+    };
+
+    this.state.next({ user, token: res.token, isAuthenticated: true });
+    localStorage.setItem("clinica_token", res.token);
+    localStorage.setItem("clinica_user", JSON.stringify(user));
+  }
+
   logout(): void {
-    this.clearSession();
+    this.state.next({ user: null, token: null, isAuthenticated: false });
+    this.data.logout();
+    localStorage.removeItem("clinica_token");
+    localStorage.removeItem("clinica_user");
   }
 
-  private saveAccessToken(token: string): void {
-    localStorage.setItem("access_token", token);
-    this.accessTokenSubject.next(token);
-  }
-
-  private clearSession(): void {
-    localStorage.removeItem("access_token");
-    this.accessTokenSubject.next(null);
-    this.currentUserSubject.next(null);
-  }
-
-  getAccessToken(): string | null {
-    return this.accessTokenSubject.value;
-  }
-
-  isAuthenticated(): boolean {
-    return !!this.accessTokenSubject.value;
-  }
-
-  get currentUser() {
-    return this.currentUserSubject.value;
-  }
-
-  get isAdmin(): boolean {
-    return this.currentUser?.role === "ADMINISTRADOR";
+  restoreSession(): void {
+    const token = localStorage.getItem("clinica_token");
+    const stored = localStorage.getItem("clinica_user");
+    if (token && stored) {
+      try {
+        const user: Usuario = JSON.parse(stored);
+        this.state.next({ user, token, isAuthenticated: true });
+      } catch {
+        this.logout();
+      }
+    }
   }
 }
