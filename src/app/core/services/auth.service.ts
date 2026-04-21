@@ -82,8 +82,8 @@ export class AuthService {
     const role: Role = (payload?.["role"] as Role) ?? "PROFISSIONAL_SAUDE";
 
     const user: Usuario = {
-      id: payload?.["sub"] ? parseInt(payload["sub"]) : 0,
-      username: payload?.["username"] ?? username,
+      id: Number(payload?.["userId"] ?? 0),
+      username: payload?.["username"] ?? payload?.["sub"] ?? username,
       role,
     };
 

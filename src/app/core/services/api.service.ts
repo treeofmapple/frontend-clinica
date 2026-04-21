@@ -88,7 +88,7 @@ export class ApiService {
   }
 
   inativarProfissional(id: number): Observable<void> {
-    return this.http.put<void>(`${this.base}/profissionais/inativar/${id}`, {});
+   return this.http.post<void>(`${this.base}/profissionais/inativar/${id}`, {});
   }
 
   // ── PROFISSIONAIS (self — perfil próprio) ──────────────────────────────────

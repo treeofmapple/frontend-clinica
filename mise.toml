@@ -1,0 +1,10 @@
+[tools]
+bun = "latest"
+
+[tasks.install]
+description = "Update the project to the latest files version."
+run = "bun install"
+
+[tasks.run]
+description = "Run Frontend App"
+run = "bun run start"

@@ -102,7 +102,7 @@ export interface Medicamento {
   nome: string;
   descricao: string;
   fornecedor: string;
-  armazenamento: ArmazenamentoMedicacao;
+  armazenamentoMedicacao: ArmazenamentoMedicacao;
   estoque: number;
   dataAquisicao: string;
   validade: string;

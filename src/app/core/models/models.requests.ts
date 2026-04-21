@@ -47,21 +47,25 @@ export interface MedicamentoUpdate {
 
 export interface AtendimentoRequest {
   pacienteId: number;
-  profissionalId?: number;
-  descricao?: string;
-  observacoes?: string;
-  dataAtendimento?: string;
-  status?: Status;
+  profissionalId: number;
+  dataInicio: string;
+  dataFim?: string | null;
+  sintomas: string;
+  diagnostico: string;
+  tratamento: string;
+  tipo: string;
 }
 
 export interface AtendimentoUpdate {
   id: string;
   pacienteId: number;
-  profissionalId?: number;
-  descricao?: string;
-  observacoes?: string;
-  dataAtendimento?: string;
-  status?: Status;
+  profissionalId: number;
+  dataInicio?: string;
+  dataFim?: string | null;
+  sintomas?: string;
+  diagnostico?: string;
+  tratamento?: string;
+  tipo?: string;
 }
 
 export interface PacienteRequest {
