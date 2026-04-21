@@ -58,7 +58,7 @@ export class MedicacoesComponent implements OnInit {
   save() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.saving = true;
-    const payload = { ...this.form.value, id: this.editItem?.id, estoque: Number(this.form.value.estoque) };
+    const payload = { ...this.form.value, id: this.editItem?.id, quantidade: Number(this.form.value.estoque) };
     const obs = this.editItem
       ? this.api.atualizarMedicamento(payload)
       : this.api.criarMedicamento(payload);

@@ -31,7 +31,7 @@ export interface ProfissionalComplementoRequest {
 export interface MedicamentoRequest {
   nome: string;
   descricao?: string;
-  quantidade?: number;
+  quantidade: number;
   unidadeMedida?: string;
   ativo?: boolean;
 }
